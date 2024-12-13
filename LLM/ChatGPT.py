@@ -2,20 +2,21 @@
 pip install openai
 '''
 import os
-import openai
+from openai import OpenAI
 
 class ChatGPT():
     def __init__(self, model_path = 'gpt-3.5-turbo', api_key = None, proxy_url = None, prefix_prompt = '''请用少于25个字回答以下问题\n\n'''):
         if proxy_url:
             os.environ['https_proxy'] = proxy_url if proxy_url else None
             os.environ['http_proxy'] = proxy_url if proxy_url else None
-        openai.api_key = api_key
+        #openai.api_key = api_key
+        self.client = OpenAI(api_key=api_key)
         self.model_path = model_path
         self.prefix_prompt = prefix_prompt
 
     def generate(self, message):
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model_path,
                 messages=[
                     {"role": "user", "content": self.prefix_prompt + message}

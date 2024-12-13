@@ -95,7 +95,7 @@ DEFAULT_DATA = np.zeros(TARGET_SR)
 def TTS_response(text, voice, rate, volume, pitch, am, voc, lang, male,
                 ref_audio, prompt_text, prompt_language, text_language,
                 cut_method, question_audio, question, use_mic_voice,
-                mode_checkbox_group, sft_dropdown, prompt_text_cv, prompt_wav_upload, prompt_wav_record, seed, speed_factor, 
+                mode_checkbox_group, sft_dropdown, prompt_text_cv, prompt_wav_upload, prompt_wav_record, seed, speed_factor,
                 tts_method='Edge-TTS', save_path='answer.wav'):
     if text == '':
         text = '请输入文字/问题'
@@ -217,9 +217,9 @@ def Talker_response_img(question_audio, method, text, voice, rate, volume, pitch
                         am, voc, lang, male, inp_ref, prompt_text, prompt_language,
                         text_language, how_to_cut, use_mic_voice, 
                         mode_checkbox_group, sft_dropdown, prompt_text_cv, prompt_wav_upload, prompt_wav_record, seed, speed_factor, 
-                        tts_method, source_image, preprocess_type, is_still_mode, enhancer,
-                        batch_size, size_of_image, pose_style, facerender,
-                        exp_weight, blink_every, fps, progress=gr.Progress(track_tqdm=True)):
+                        tts_method, source_image, preprocess_type, is_still_mode,
+                        enhancer, batch_size, size_of_image, pose_style, facerender,
+                        exp_weight, blink_every, fps=20, progress=gr.Progress(track_tqdm=True)):
 
     if enhancer:
         gr.Warning("请先安装GFPGAN库 (pip install gfpgan)，已安装可忽略")
@@ -230,7 +230,8 @@ def Talker_response_img(question_audio, method, text, voice, rate, volume, pitch
     driven_audio, driven_vtt, _ = LLM_response(question_audio, text, voice, rate, volume, pitch,
                                             am, voc, lang, male, inp_ref, prompt_text, prompt_language,
                                             text_language, how_to_cut, use_mic_voice, 
-                                            mode_checkbox_group, sft_dropdown, prompt_text_cv, prompt_wav_upload, prompt_wav_record, seed, speed_factor, tts_method)
+                                            mode_checkbox_group, sft_dropdown, prompt_text_cv, prompt_wav_upload, prompt_wav_record, seed, speed_factor, 
+                                            tts_method)
 
     if driven_audio is None:
         gr.Warning("音频没有正常生成，请检查TTS是否正确")
@@ -246,7 +247,7 @@ def Talker_response_img(question_audio, method, text, voice, rate, volume, pitch
     elif method == 'Wav2Lip':
         video = talker.predict(source_image, driven_audio, batch_size)
     elif method == 'Wav2Lipv2':
-        video = talker.run(source_image, driven_audio, batch_size)
+        video = talker.predict(source_image, driven_audio, batch_size)
     elif method == 'NeRFTalk':
         video = talker.predict(driven_audio)
     else:
@@ -395,48 +396,49 @@ def webui_setting(talk=False):
                 source_image = gr.Image(label="Source image", type="filepath")
     else:
         source_image = None
-    with gr.Tabs("TTS Method"):
-        with gr.Accordion("TTS Method语音方法调节 ", open=True):
-            with gr.Tab("Edge-TTS"):
-                voice = gr.Dropdown(edgetts.SUPPORTED_VOICE, value='zh-CN-XiaoxiaoNeural', label="Voice 声音选择")
-                rate = gr.Slider(minimum=-100, maximum=100, value=0, step=1.0, label='Rate 速率')
-                volume = gr.Slider(minimum=0, maximum=100, value=100, step=1, label='Volume 音量')
-                pitch = gr.Slider(minimum=-100, maximum=100, value=0, step=1, label='Pitch 音调')
-            with gr.Tab("PaddleTTS"):
-                am = gr.Dropdown(["FastSpeech2"], label="声学模型选择", value='FastSpeech2')
-                voc = gr.Dropdown(["PWGan", "HifiGan"], label="声码器选择", value='PWGan')
-                lang = gr.Dropdown(["zh", "en", "mix", "canton"], label="语言选择", value='zh')
-                male = gr.Checkbox(label="男声(Male)", value=False)
-            with gr.Tab('GPT-SoVITS'):
-                with gr.Row():
-                    gpt_path = gr.FileExplorer(root=GPT_SoVITS_ckpt, glob="*.ckpt", value="s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt", file_count='single', label="GPT模型路径")
-                    sovits_path = gr.FileExplorer(root=GPT_SoVITS_ckpt, glob="*.pth", value="s2G488k.pth", file_count='single', label="SoVITS模型路径")
-                button = gr.Button("加载模型")
-                button.click(fn=load_vits_model, inputs=[gpt_path, sovits_path], outputs=[gpt_path, sovits_path])
-                with gr.Row():
-                    ref_audio = gr.Audio(label="请上传3~10秒内参考音频，超过会报错！", sources=["microphone", "upload"], type="filepath")
-                    use_mic_voice = gr.Checkbox(label="使用语音问答的麦克风")
-                    prompt_text = gr.Textbox(label="参考音频的文本", value="")
-                    prompt_language = gr.Dropdown(label="参考音频的语种", choices=["中文", "英文", "日文"], value="中文")
-                asr_button = gr.Button("语音识别 - 克隆参考音频")
-                asr_button.click(fn=Asr, inputs=[ref_audio], outputs=[prompt_text])
-                with gr.Row():
-                    text_language = gr.Dropdown(label="需要合成的语种", choices=["中文", "英文", "日文", "中英混合", "日英混合", "多语种混合"], value="中文")
-                    cut_method = gr.Dropdown(label="怎么切", choices=["不切", "凑四句一切", "凑50字一切", "按中文句号。切", "按英文句号.切", "按标点符号切"], value="凑四句一切", interactive=True)
+    with gr.Tabs():
+        with gr.Tab("TTS Method"):
+            with gr.Accordion("TTS Method语音方法调节 ", open=True):
+                with gr.Tab("Edge-TTS"):
+                    voice = gr.Dropdown(label="Voice 声音选择", choices=edgetts.SUPPORTED_VOICE, value='zh-CN-XiaoxiaoNeural')
+                    rate = gr.Slider(label='Rate 速率', minimum=-100, maximum=100, value=0, step=1.0)
+                    volume = gr.Slider(label='Volume 音量', minimum=0, maximum=100, value=100, step=1)
+                    pitch = gr.Slider(label='Pitch 音调', minimum=-100, maximum=100, value=0, step=1)
+                with gr.Tab("PaddleTTS"):
+                    am = gr.Dropdown(label="声学模型选择", choices=["FastSpeech2"], value='FastSpeech2')
+                    voc = gr.Dropdown(label="声码器选择", choices=["PWGan", "HifiGan"], value='PWGan')
+                    lang = gr.Dropdown(label="语言选择", choices=["zh", "en", "mix", "canton"], value='zh')
+                    male = gr.Checkbox(label="男声(Male)", value=False)
+                with gr.Tab('GPT-SoVITS'):
+                    with gr.Row():
+                        gpt_path = gr.File(label="GPT模型路径", file_types=[".ckpt"])
+                        sovits_path = gr.File(label="SoVITS模型路径", file_types=[".pth"])
+                    button = gr.Button("加载模型")
+                    button.click(fn=load_vits_model, inputs=[gpt_path, sovits_path], outputs=[gpt_path, sovits_path])
+                    with gr.Row():
+                        ref_audio = gr.Audio(label="请上传3~10秒内参考音频，超过会报错！", sources=["microphone", "upload"], type="filepath")
+                        use_mic_voice = gr.Checkbox(label="使用语音问答的麦克风")
+                        prompt_text = gr.Textbox(label="参考音频的文本", value="")
+                        prompt_language = gr.Dropdown(label="参考音频的语种", choices=["中文", "英文", "日文"], value="中文")
+                    asr_button = gr.Button("语音识别 - 克隆参考音频")
+                    asr_button.click(fn=Asr, inputs=[ref_audio], outputs=[prompt_text])
+                    with gr.Row():
+                        text_language = gr.Dropdown(label="需要合成的语种", choices=["中文", "英文", "日文", "中英混合", "日英混合", "多语种混合"], value="中文")
+                        cut_method = gr.Dropdown(label="怎么切", choices=["不切", "凑四句一切", "凑50字一切", "按中文句号。切", "按英文句号.切", "按标点符号切"], value="凑四句一切", interactive=True)
             
             with gr.Tab('CosyVoice'):
                 # tts_text = gr.Textbox(label="输入合成文本", lines=1, value="我是通义实验室语音团队全新推出的生成式语音大模型，提供舒适自然的语音合成能力。")
-                speed_factor = gr.Slider(minimum=0.25, maximum=4, step=0.05, label="语速调节", value=1.0, interactive=True)
+                speed_factor = gr.Slider(label="语速调节", minimum=0.25, maximum=4, step=0.05, value=1.0, interactive=True)
                 with gr.Row():
-                    mode_checkbox_group = gr.Radio(choices=inference_mode_list, label='选择推理模式', value=inference_mode_list[0])
+                    mode_checkbox_group = gr.Radio(label='选择推理模式', choices=inference_mode_list, value=inference_mode_list[0])
                     instruction_text = gr.Text(label="操作步骤", lines=3, value=instruct_dict[inference_mode_list[0]], scale=0.5)
-                    sft_dropdown = gr.Dropdown(choices=['中文女', '中文男', '日语男', '粤语女', '英文女', '英文男', '韩语女'], label='选择预训练音色', value="中文女", scale=0.25)
+                    sft_dropdown = gr.Dropdown(label='选择预训练音色', choices=['中文女', '中文男', '日语男', '粤语女', '英文女', '英文男', '韩语女'], value="中文女", scale=0.25)
                 with gr.Row():
                     seed_button = gr.Button(value="\U0001F3B2")
-                    seed = gr.Number(value=0, label="随机推理种子")
+                    seed = gr.Number(label="随机推理种子", value=0)
                 with gr.Row():
-                    prompt_wav_upload = gr.Audio(sources='upload', type='filepath', label='选择prompt音频文件，注意采样率不低于16khz')
-                    prompt_wav_record = gr.Audio(sources='microphone', type='filepath', label='录制prompt音频文件')
+                    prompt_wav_upload = gr.Audio(label='选择prompt音频文件，注意采样率不低于16khz', sources='upload', type='filepath')
+                    prompt_wav_record = gr.Audio(label='录制prompt音频文件', sources='microphone', type='filepath')
                 prompt_text_cv = gr.Textbox(label="输入prompt文本", lines=1, placeholder="请输入prompt文本，需与prompt音频内容一致，暂时不支持自动识别...", value='')
                 # instruct_text = gr.Textbox(label="输入instruct文本", lines=1, placeholder="请输入instruct文本.", value='')
                 seed_button.click(generate_seed, inputs=[], outputs=seed)
@@ -445,20 +447,20 @@ def webui_setting(talk=False):
             audio_output = gr.Audio(label="合成音频")
             
             with gr.Column(variant='panel'):
-                batch_size = gr.Slider(minimum=1, maximum=10, value=2, step=1, label='Talker Batch size')
+                batch_size = gr.Slider(label='Talker Batch size', minimum=1, maximum=10, value=2, step=1)
     if not talk:
-        character = gr.Radio(['女性角色', '男性角色', '自定义角色'], label="角色选择", value='自定义角色')
+        character = gr.Radio(label="角色选择", choices=['女性角色', '男性角色', '自定义角色'], value='自定义角色')
         character.change(fn=character_change, inputs=[character], outputs=[source_image])
-        talker_method = gr.Radio(choices=['SadTalker', 'Wav2Lip', 'Wav2Lipv2', 'NeRFTalk', 'Comming Soon!!!'], value='SadTalker', label='数字人模型选择')
+        talker_method = gr.Radio(label="数字人模型选择", choices=['SadTalker', 'Wav2Lip', 'Wav2Lipv2', 'NeRFTalk', 'Comming Soon!!!'], value='SadTalker')
         talker_method.change(fn=talker_model_change, inputs=[talker_method], outputs=[talker_method])
     else:
         character = None
         talker_method = None
-    tts_method = gr.Radio(['Edge-TTS', 'PaddleTTS', 'GPT-SoVITS克隆声音', 'CosyVoice-SFT模式', 'CosyVoice-克隆翻译模式', 'Comming Soon!!!'], label="Text To Speech Method", value='Edge-TTS')
+    tts_method = gr.Radio(label="Text To Speech Method", choices=['Edge-TTS', 'PaddleTTS', 'GPT-SoVITS克隆声音', 'CosyVoice-SFT模式', 'CosyVoice-克隆翻译模式', 'Comming Soon!!!'], value='Edge-TTS')
     tts_method.change(fn=tts_model_change, inputs=[tts_method], outputs=[tts_method])
-    asr_method = gr.Radio(choices=['Whisper-tiny', 'Whisper-base', 'FunASR', 'Comming Soon!!!'], value='Whisper-base', label='语音识别模型选择')
+    asr_method = gr.Radio(label="语音识别模型选择", choices=['Whisper-tiny', 'Whisper-base', 'FunASR', 'Comming Soon!!!'], value='Whisper-base')
     asr_method.change(fn=asr_model_change, inputs=[asr_method], outputs=[asr_method])
-    llm_method = gr.Dropdown(choices=['Qwen', 'Qwen2', 'Linly', 'Gemini', 'ChatGLM', 'ChatGPT', 'GPT4Free', 'QAnything', '直接回复 Direct Reply', 'Comming Soon!!!'], value='直接回复 Direct Reply', label='LLM 模型选择')
+    llm_method = gr.Dropdown(label="LLM 模型选择", choices=['Qwen', 'Qwen2', 'Linly', 'Gemini', 'ChatGLM', 'ChatGPT', 'Llama3', 'GPT4Free', 'QAnything', '直接回复 Direct Reply', 'Comming Soon!!!'], value='直接回复 Direct Reply')
     llm_method.change(fn=llm_model_change, inputs=[llm_method], outputs=[llm_method])
     return (source_image, voice, rate, volume, pitch, am, voc, lang, male, 
             ref_audio, prompt_text, prompt_language, text_language, cut_method, use_mic_voice, tts_method, 
@@ -509,15 +511,15 @@ def app_multi():
                             with gr.Column(variant='panel'):
                                 # 数字人参数设置
                                 with gr.Row():
-                                    pose_style = gr.Slider(minimum=0, maximum=45, step=1, label="Pose style", value=0)
-                                    exp_weight = gr.Slider(minimum=0, maximum=3, step=0.1, label="expression scale", value=1)
+                                    pose_style = gr.Slider(label="Pose style", minimum=0, maximum=45, step=1, value=0)
+                                    exp_weight = gr.Slider(label="expression scale", minimum=0, maximum=3, step=0.1, value=1)
                                     blink_every = gr.Checkbox(label="use eye blink", value=True)
                                 with gr.Row():
-                                    size_of_image = gr.Radio([256, 512], value=256, label='face model resolution', info="use 256/512 model? 256 is faster")
-                                    preprocess_type = gr.Radio(['crop', 'resize','full', 'extcrop', 'extfull'], value='crop', label='preprocess', info="How to handle input image?")
+                                    size_of_image = gr.Radio(label='face model resolution', choices=[256, 512], value=256, info="use 256/512 model? 256 is faster")
+                                    preprocess_type = gr.Radio(label='preprocess', choices=['crop', 'resize','full', 'extcrop', 'extfull'], value='crop', info="How to handle input image?")
                                 with gr.Row():
                                     is_still_mode = gr.Checkbox(label="Still Mode (fewer head motion, works with preprocess `full`)")
-                                    facerender = gr.Radio(['facevid2vid'], value='facevid2vid', label='facerender', info="which face render?")
+                                    facerender = gr.Radio(label='facerender', choices=['facevid2vid'], value='facevid2vid', info="which face render?")
                                 with gr.Row():
                                     fps = gr.Slider(label='fps in generation', step=1, maximum=30, value=20)
                                     enhancer = gr.Checkbox(label="GFPGAN as Face enhancer(slow)")
@@ -535,7 +537,7 @@ def app_multi():
                 
                 # 语音输入及识别按钮
                 with gr.Group():
-                    question_audio = gr.Audio(sources=['microphone','upload'], type="filepath", label='语音对话', autoplay=False)
+                    question_audio = gr.Audio(sources=['microphone','upload'], type="filepath", label='语音对话')
                     asr_btn = gr.Button('🎤 语音识别（语音对话后点击）')
                 
                 # 文本输入框
@@ -614,15 +616,15 @@ def app_img():
                             gr.Markdown("SadTalker: need help? please visit our [best practice page](https://github.com/OpenTalker/SadTalker/blob/main/docs/best_practice.md) for more details")
                             with gr.Column(variant='panel'):
                                 with gr.Row():
-                                    pose_style = gr.Slider(minimum=0, maximum=45, step=1, label="Pose style", value=0)
-                                    exp_weight = gr.Slider(minimum=0, maximum=3, step=0.1, label="expression scale", value=1)
+                                    pose_style = gr.Slider(label="Pose style", minimum=0, maximum=45, step=1, value=0)
+                                    exp_weight = gr.Slider(label="expression scale", minimum=0, maximum=3, step=0.1, value=1)
                                     blink_every = gr.Checkbox(label="use eye blink", value=True)
                                 with gr.Row():
-                                    size_of_image = gr.Radio([256, 512], value=256, label='face model resolution', info="use 256/512 model? 256 is faster")
-                                    preprocess_type = gr.Radio(['crop', 'resize', 'full', 'extcrop', 'extfull'], value='crop', label='preprocess', info="How to handle input image?")
+                                    size_of_image = gr.Radio(label='face model resolution', choices=[256, 512], value=256, info="use 256/512 model? 256 is faster")
+                                    preprocess_type = gr.Radio(label='preprocess', choices=['crop', 'resize', 'full', 'extcrop', 'extfull'], value='crop', info="How to handle input image?")
                                 with gr.Row():
                                     is_still_mode = gr.Checkbox(label="Still Mode (fewer head motion, works with preprocess `full`)")
-                                    facerender = gr.Radio(['facevid2vid'], value='facevid2vid', label='facerender', info="which face render?")
+                                    facerender = gr.Radio(label='facerender', choices=['facevid2vid'], value='facevid2vid', info="which face render?")
                                 with gr.Row():
                                     fps = gr.Slider(label='fps in generation', step=1, maximum=30, value=20)
                                     enhancer = gr.Checkbox(label="GFPGAN as Face enhancer(slow)")
@@ -761,78 +763,106 @@ def app_muse():
 def asr_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
     """根据选择的模型名称更换ASR模型。"""
     global asr
-    clear_memory()  # 清理显存
+    #clear_memory()  # 清理显存
 
     try:
         if model_name == "Whisper-tiny":
             asr_path = 'Whisper/tiny.pt' if os.path.exists('Whisper/tiny.pt') else 'tiny'
             asr = WhisperASR(asr_path)
-            gr.Info("Whisper-tiny模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == "Whisper-base":
             asr_path = 'Whisper/base.pt' if os.path.exists('Whisper/base.pt') else 'base'
             asr = WhisperASR(asr_path)
-            gr.Info("Whisper-base模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'FunASR':
             from ASR import FunASR
             asr = FunASR()
-            gr.Info("FunASR模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         else:
-            gr.Warning("未知ASR模型，可提issue和PR 或者 建议更新模型")
+            print(f"未知ASR模型，可提issue和PR 或者 建议更新模型")
+            return model_name
     except Exception as e:
-        gr.Warning(f"{model_name}模型加载失败: {e}")
-
-    return model_name
+        print(f"{model_name}模型加载失败: {e}")
+        return model_name
 
 def llm_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
     """更换LLM模型，并根据选择的模型加载相应资源。"""
     global llm
     gemini_apikey = ""  # Gemini模型的API密钥
     openai_apikey = ""  # OpenAI的API密钥
+    llama3_apikey = "LA-bcde398ac3ef443c961f2f0af94be707d8506d0995fa47d09d3fa907fd53298c"
     proxy_url = None  # 代理URL
 
     # 清理显存，释放不必要的显存以便加载新模型
-    clear_memory()
+    #clear_memory()
 
     try:
         if model_name == 'Linly':
             llm = llm_class.init_model('Linly', 'Linly-AI/Chinese-LLaMA-2-7B-hf', prefix_prompt=PREFIX_PROMPT)
-            gr.Info("Linly模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'Qwen':
             llm = llm_class.init_model('Qwen', 'Qwen/Qwen-1_8B-Chat', prefix_prompt=PREFIX_PROMPT)
-            gr.Info("Qwen模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'Qwen2':
             llm = llm_class.init_model('Qwen2', 'Qwen/Qwen1.5-0.5B-Chat', prefix_prompt=PREFIX_PROMPT)
-            gr.Info("Qwen2模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'Gemini':
             if gemini_apikey:
                 llm = llm_class.init_model('Gemini', 'gemini-pro', gemini_apikey, proxy_url)
-                gr.Info("Gemini模型导入成功")
+                print(f"{model_name}模型导入成功")
+                return model_name
             else:
-                gr.Warning("请填写Gemini的API密钥")
+                print("请填写Gemini的API密钥")
+                return model_name
         elif model_name == 'ChatGLM':
             llm = llm_class.init_model('ChatGLM', 'THUDM/chatglm3-6b', prefix_prompt=PREFIX_PROMPT)
-            gr.Info("ChatGLM模型导入成功")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'ChatGPT':
             if openai_apikey:
                 llm = llm_class.init_model('ChatGPT', api_key=openai_apikey, proxy_url=proxy_url, prefix_prompt=PREFIX_PROMPT)
-                gr.Info("ChatGPT模型导入成功")
+                print(f"{model_name}模型导入成功")
+                return model_name
             else:
-                gr.Warning("请填写OpenAI的API密钥")
+                print("请填写OpenAI的API密钥")
+                return model_name
+        elif model_name == 'Llama3':
+            if llama3_apikey:
+                try:
+                    llm = llm_class.init_model('Llama3', api_key=llama3_apikey, proxy_url=proxy_url, prefix_prompt=PREFIX_PROMPT)
+                    print(f"成功初始化{model_name}模型")
+                    return model_name
+                except Exception as e:
+                    error_msg = f"初始化{model_name}模型失败: {str(e)}"
+                    print(error_msg)
+                    return model_name
+            else:
+                print("请在configs.py中设置llama3_apikey")
+                return model_name
         elif model_name == '直接回复 Direct Reply':
             llm = llm_class.init_model(model_name)
-            gr.Info("直接回复，不使用LLM模型")
+            print(f"{model_name}模型导入成功")
+            return model_name
         elif model_name == 'GPT4Free':
             llm = llm_class.init_model('GPT4Free', prefix_prompt=PREFIX_PROMPT)
-            gr.Info("GPT4Free模型导入成功，请注意该模型可能不稳定")
+            print(f"{model_name}模型导入成功，请注意该模型可能不稳定")
+            return model_name
         elif model_name == 'QAnything':
             llm = llm_class.init_model('QAnything')
-            gr.Info("QAnything模型接口加载成功")
+            print(f"{model_name}模型接口加载成功")
+            return model_name
         else:
-            gr.Warning("未知LLM模型，请检查模型名称或提出Issue")
+            print("未知LLM模型，请检查模型名称或提出Issue")
+            return model_name
     except Exception as e:
-        gr.Warning(f"{model_name}模型加载失败: {e}")
-
-    return model_name
+        print(f"{model_name}模型加载失败: {e}")
+        return model_name
 def talker_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
     """更换数字人对话模型，并根据选择的模型加载相应资源。"""
     global talker
@@ -841,34 +871,37 @@ def talker_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
     clear_memory()
 
     if model_name not in ['SadTalker', 'Wav2Lip', 'Wav2Lipv2', 'NeRFTalk']:
-        gr.Warning("其他模型暂未集成，请等待更新")
+        print("其他模型暂未集成，请等待更新")
         return model_name
 
     try:
         if model_name == 'SadTalker':
             from TFG import SadTalker
             talker = SadTalker(lazy_load=True)
-            gr.Info("SadTalker模型导入成功")
+            print("SadTalker模型导入成功")
+            return model_name
         elif model_name == 'Wav2Lip':
             from TFG import Wav2Lip
             clear_memory()
             talker = Wav2Lip("checkpoints/wav2lip_gan.pth")
-            gr.Info("Wav2Lip模型导入成功")
+            print("Wav2Lip模型导入成功")
+            return model_name
         elif model_name == 'Wav2Lipv2':
             from TFG import Wav2Lipv2
             clear_memory()
             talker = Wav2Lipv2('checkpoints/wav2lipv2.pth')
-            gr.Info("Wav2Lipv2模型导入成功，能够生成更高质量的结果")
+            print("Wav2Lipv2模型导入成功，能够生成更高质量的结果")
+            return model_name
         elif model_name == 'NeRFTalk':
             from TFG import NeRFTalk
             talker = NeRFTalk()
             talker.init_model('checkpoints/Obama_ave.pth', 'checkpoints/Obama.json')
-            gr.Info("NeRFTalk模型导入成功")
-            gr.Warning("NeRFTalk模型仅针对单个人训练，内置奥巴马模型，上传其他图片无效")
+            print("NeRFTalk模型导入成功")
+            print("NeRFTalk模型仅针对单个人训练，内置奥巴马模型，上传其他图片无效")
+            return model_name
     except Exception as e:
-        gr.Warning(f"{model_name}模型加载失败: {e}")
-
-    return model_name
+        print(f"{model_name}模型加载失败: {e}")
+        return model_name
 
 def tts_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
     """更换TTS模型，并根据选择的模型加载相应资源。"""
@@ -881,34 +914,40 @@ def tts_model_change(model_name, progress=gr.Progress(track_tqdm=True)):
         if model_name == 'Edge-TTS':
             # tts = EdgeTTS()  # Uncomment when implementation available
             if edgetts.network:
-                gr.Info("EdgeTTS模型导入成功")
+                print("EdgeTTS模型导入成功")
+                return model_name
             else:
-                gr.Warning("EdgeTTS模型加载失败，请检查网络连接")
+                print("EdgeTTS模型加载失败，请检查网络连接")
+                return model_name
         elif model_name == 'PaddleTTS':
             from TTS import PaddleTTS
             tts = PaddleTTS()
-            gr.Info("PaddleTTS模型导入成功, 效果有限，不建议使用")
+            print("PaddleTTS模型导入成功, 效果有限，不建议使用")
+            return model_name
         elif model_name == 'GPT-SoVITS克隆声音':
             gpt_path = "GPT_SoVITS/pretrained_models/s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt"
             sovits_path = "GPT_SoVITS/pretrained_models/s2G488k.pth"
             vits.load_model(gpt_path, sovits_path)
-            gr.Info("GPT-SoVITS模型加载成功，请上传参考音频进行克隆")
+            print("GPT-SoVITS模型加载成功，请上传参考音频进行克隆")
+            return model_name
         elif model_name == 'CosyVoice-SFT模式':
             from VITS import CosyVoiceTTS
             model_path = 'checkpoints/CosyVoice_ckpt/CosyVoice-300M-SFT'
             cosyvoice = CosyVoiceTTS(model_path)
-            gr.Info("CosyVoice模型导入成功，适合使用SFT模式，用微调后数据")
+            print("CosyVoice模型导入成功，适合使用SFT模式，用微调后数据")
+            return model_name
         elif model_name == 'CosyVoice-克隆翻译模式':
             from VITS import CosyVoiceTTS
             model_path = 'checkpoints/CosyVoice_ckpt/CosyVoice-300M'
             cosyvoice = CosyVoiceTTS(model_path)
-            gr.Info("CosyVoice模型导入成功，更适合进行克隆声音和翻译声音")
+            print("CosyVoice模型导入成功，更适合进行克隆声音和翻译声音")
+            return model_name
         else:
-            gr.Warning("未知TTS模型，请检查模型名称或提出Issue")
+            print("未知TTS模型，请检查模型名称或提出Issue")
+            return model_name
     except Exception as e:
-        gr.Warning(f"{model_name}模型加载失败: {e}")
-
-    return model_name
+        print(f"{model_name}模型加载失败: {e}")
+        return model_name
 
 def success_print(text):
     """输出绿色文本，表示成功信息。"""
@@ -984,13 +1023,13 @@ if __name__ == "__main__":
         tab_names=["个性化角色互动", "数字人多轮智能对话", "MuseTalk数字人实时对话"],
         title="Linly-Talker WebUI"
     )
-    demo.queue(max_size=4, default_concurrency_limit=2)
+    demo.queue(max_size=4, concurrency_count=2)
     demo.launch(
         server_name=ip,  # 本地localhost:127.0.0.1 或 "0.0.0.0" 进行全局端口转发
         server_port=port,
         # ssl_certfile=ssl_certfile,  # SSL证书文件
         # ssl_keyfile=ssl_keyfile,  # SSL密钥文件
         # ssl_verify=False,
-        # share=True,
+        share=True,
         debug=True,
     )

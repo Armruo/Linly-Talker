@@ -6,7 +6,7 @@ import datetime
 import torch
 from configs import model_path, api_port
 # 设置设备参数
-DEVICE = "cuda"  # 使用CUDA
+DEVICE = "11"  # 使用CUDA
 DEVICE_ID = "0"  # CUDA设备ID，如果未设置则为空
 CUDA_DEVICE = f"{DEVICE}:{DEVICE_ID}" if DEVICE_ID else DEVICE  # 组合CUDA设备信息
 

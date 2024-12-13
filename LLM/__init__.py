@@ -7,6 +7,7 @@ except Exception as e:
     print("Gemini模型加载失败，可能是因为没有google-generativeai库，但是Gemini模型不是必顂的，可以忽略")
 from .ChatGPT import ChatGPT
 from .ChatGLM import ChatGLM
+from .Llama3 import Llama3
 from .Llama2Chinese import Llama2Chinese
 from .GPT4Free import GPT4FREE
 from .QAnything import QAnything
@@ -36,7 +37,7 @@ class LLM:
         self.mode = mode
         
     def init_model(self, model_name, model_path='', api_key=None, proxy_url=None, prefix_prompt='''请用少于25个字回答以下问题\n\n'''):
-        if model_name not in ['Linly', 'Qwen', 'Qwen2', 'Gemini', 'ChatGLM', 'ChatGPT', 'Llama2Chinese', 'GPT4Free', 'QAnything', '直接回复 Direct Reply']:
+        if model_name not in ['Linly', 'Qwen', 'Qwen2', 'Gemini', 'ChatGLM', 'ChatGPT', 'Llama3', 'Llama2Chinese', 'GPT4Free', 'QAnything', '直接回复 Direct Reply']:
             raise ValueError("model_name must be one of ['Linly', 'Qwen', 'Qwen2', 'Gemini', 'ChatGLM', 'ChatGPT', 'Llama2Chinese', 'GPT4Free', 'QAnything', '直接回复 Direct Reply']")
         if model_name == 'Linly':
             llm = Linly(self.mode, model_path)
@@ -50,6 +51,8 @@ class LLM:
             llm = ChatGLM(self.mode, model_path)
         elif model_name == 'ChatGPT':
             llm = ChatGPT(model_path, api_key, proxy_url)
+        elif model_name == 'Llama3':
+            llm = Llama3()
         elif model_name == 'Llama2Chinese':
             llm = Llama2Chinese(model_path, self.mode)
         elif model_name == 'GPT4Free':
