@@ -12,6 +12,7 @@ class NewsSpeaker:
     def __init__(self):
         try:
             self.tts = EdgeTTS()
+            self.current_volume = 1.0  # Default volume (0.0 to 1.0)
             self.voice_configs = {
                 'zh': {
                     'voice': 'zh-CN-XiaoxiaoNeural',
@@ -59,3 +60,11 @@ class NewsSpeaker:
         except Exception as e:
             logging.error(f"TTS error: {str(e)}")
             return None
+
+    def set_volume(self, volume):
+        """设置音量 (0.0 到 1.0)"""
+        self.current_volume = max(0.0, min(1.0, volume))
+        # 更新所有语音配置的音量
+        volume_percent = f"{int(self.current_volume * 100)}%"
+        for config in self.voice_configs.values():
+            config['volume'] = f"+{volume_percent}"

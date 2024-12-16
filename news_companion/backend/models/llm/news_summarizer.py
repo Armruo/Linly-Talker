@@ -23,36 +23,57 @@ class NewsSummarizer:
             
         try:
             prompt = self._create_prompt(text, language)
-            response = self.llm.generate(prompt)  # Use generate instead of chat
+            response = self.llm.generate(prompt)
             if isinstance(response, tuple):
-                response = response[0]  # Extract first element if it's a tuple
+                response = response[0]
             return response
         except Exception as e:
             logging.error(f"Error generating summary: {str(e)}")
-            return "生成摘要时发生错误"
+            return f"生成摘要时发生错误: {str(e)}"
             
     def _create_prompt(self, text, language):
         """创建提示词"""
         lang_prompts = {
             'zh': """
-                请总结以下新闻内容的要点：
+                请分析以下新闻内容，并提供详细总结：
                 {text}
                 
-                要求：
-                1. 提取3-5个核心观点
-                2. 每个观点不超过30字
-                3. 使用中文输出
+                请按以下格式输出：
+                
+                【核心要点】
+                1. 
+                2. 
+                3. 
+                
+                【深度分析】
+                - 影响和意义：
+                - 发展趋势：
+                - 相关建议：
+                
+                【延伸阅读建议】
+                - 建议关注的相关主题：
                 """,
             'en': """
-                Please summarize the key points of the following news:
+                Please analyze the following news content and provide a detailed summary:
                 {text}
                 
-                Requirements:
-                1. Extract 3-5 core points
-                2. Each point should not exceed 30 words
-                3. Output in English
+                Output in the following format:
+                
+                [Key Points]
+                1. 
+                2. 
+                3. 
+                
+                [In-depth Analysis]
+                - Impact and Significance:
+                - Development Trends:
+                - Related Recommendations:
+                
+                [Suggested Further Reading]
+                - Related topics to follow:
                 """
         }
         
-        prompt = lang_prompts.get(language, lang_prompts['zh'])
-        return prompt.format(text=text)
+        # Use English prompt for languages other than Chinese
+        prompt_template = lang_prompts.get(language, lang_prompts['en'])
+        return prompt_template.format(text=text)
