@@ -1024,12 +1024,9 @@ if __name__ == "__main__":
         title="Linly-Talker WebUI"
     )
     demo.launch(
-        server_name=ip,  # 本地localhost:127.0.0.1 或 "0.0.0.0" 进行全局端口转发
-        server_port=7860,  # Using Gradio's default port
-        # ssl_certfile=ssl_certfile,  # SSL证书文件
-        # ssl_keyfile=ssl_keyfile,  # SSL密钥文件
-        # ssl_verify=False,
-        share=True,
-        debug=True,
-        max_threads=4
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=False,
+        inbrowser=True,
+        enable_queue=True
     )

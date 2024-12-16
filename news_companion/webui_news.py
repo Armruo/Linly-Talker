@@ -22,21 +22,60 @@ class NewsCompanionUI:
         self.speaker = NewsSpeaker()
         self.current_text = ""
         
-    def process_news(self, url, language_name, auto_play=False):
+    def process_news(self, input_text, language_name, auto_play=False):
         """处理新闻内容"""
         try:
-            # Extract news content
-            content = self.extractor.extract_content(url)
-            if not content:
-                return "无法提取新闻内容。请检查URL是否正确，或尝试其他新闻链接。", None, None
+            # Get language code from selection
+            language_code = language_name.split()[0].lower()
+            
+            # Determine if input is URL or direct text
+            input_text = input_text.strip()
+            if input_text.startswith(('http://', 'https://')):
+                # Handle URL input
+                content = self.extractor.extract_content(input_text)
+                if not content:
+                    error_messages = {
+                        'zh': "无法从URL提取内容。您可以直接粘贴新闻原文到输入框。",
+                        'en': "Cannot extract content from URL. You can paste the news content directly.",
+                        'th': "ไม่สามารถดึงเนื้อหาจาก URL ได้ คุณสามารถวางเนื้อหาข่าวโดยตรง",
+                        'vi': "Không thể trích xuất nội dung từ URL. Bạn có thể dán trực tiếp nội dung tin tức.",
+                        'id': "Tidak dapat mengekstrak konten dari URL. Anda dapat menempelkan konten berita secara langsung.",
+                        'ms': "Tidak dapat mengekstrak kandungan dari URL. Anda boleh tampal kandungan berita secara langsung."
+                    }
+                    return error_messages.get(language_code, error_messages['en']), None, None
+            else:
+                # Use input text directly as content
+                content = input_text
+                if len(content.strip()) < 50:  # Basic validation
+                    error_messages = {
+                        'zh': "请输入更多内容（至少50个字符）或有效的新闻URL。",
+                        'en': "Please enter more content (at least 50 characters) or a valid news URL.",
+                        'th': "โปรดป้อนเนื้อหาเพิ่มเติม (อย่างน้อย 50 ตัวอักษร) หรือ URL ข่าวที่ถูกต้อง",
+                        'vi': "Vui lòng nhập thêm nội dung (ít nhất 50 ký tự) hoặc URL tin tức hợp lệ.",
+                        'id': "Harap masukkan lebih banyak konten (minimal 50 karakter) atau URL berita yang valid.",
+                        'ms': "Sila masukkan lebih banyak kandungan (minimum 50 aksara) atau URL berita yang sah."
+                    }
+                    return error_messages.get(language_code, error_messages['en']), None, None
             
             self.current_text = content
             
-            # Generate summary
-            language_code = language_name.split()[0].lower()
+            # First translate the content if not in target language
+            # We'll assume the content is in Chinese by default
+            if language_code != 'zh':
+                content = self.translator.translate(content, target_lang=language_code, source_lang='zh')
+            
+            # Generate summary in target language
             summary = self.summarizer.generate_summary(content, language_code)
             if not summary:
-                return "生成摘要失败。请稍后重试。", None, None
+                error_messages = {
+                    'zh': "生成摘要失败。请稍后重试。",
+                    'en': "Failed to generate summary. Please try again later.",
+                    'th': "การสร้างสรุปล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+                    'vi': "Không thể tạo tóm tắt. Vui lòng thử lại sau.",
+                    'id': "Gagal menghasilkan ringkasan. Silakan coba lagi nanti.",
+                    'ms': "Gagal menjana ringkasan. Sila cuba lagi kemudian."
+                }
+                return error_messages.get(language_code, error_messages['en']), None, None
             
             # Generate audio if auto_play is enabled
             audio_path = None
@@ -47,7 +86,15 @@ class NewsCompanionUI:
             
         except Exception as e:
             logging.error(f"Error processing news: {str(e)}")
-            return f"处理新闻时出错: {str(e)}", None, None
+            error_messages = {
+                'zh': f"处理新闻时出错: {str(e)}",
+                'en': f"Error processing news: {str(e)}",
+                'th': f"เกิดข้อผิดพลาดในการประมวลผลข่าว: {str(e)}",
+                'vi': f"Lỗi khi xử lý tin tức: {str(e)}",
+                'id': f"Kesalahan saat memproses berita: {str(e)}",
+                'ms': f"Ralat semasa memproses berita: {str(e)}"
+            }
+            return error_messages.get(language_code, error_messages['en']), None, None
             
     def play_audio(self, audio_path):
         """播放音频"""
@@ -112,17 +159,6 @@ def launch_news_companion():
             opacity: 0.9;
         }
         
-        /* Audio controls */
-        .audio-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0;
-            padding: 10px;
-            background: var(--bg-color);
-            border-radius: 5px;
-        }
-        
         /* Text areas */
         .textbox {
             background: var(--bg-color);
@@ -130,6 +166,7 @@ def launch_news_companion():
             border: 1px solid var(--border-color);
             border-radius: 5px;
             padding: 10px;
+            min-height: 100px;
         }
         
         /* Dropdown */
@@ -140,15 +177,22 @@ def launch_news_companion():
             border-radius: 5px;
             padding: 5px;
         }
+        
+        /* Placeholder text */
+        .textbox::placeholder {
+            color: #666;
+            font-style: italic;
+        }
     """) as demo:
         with gr.Column(elem_classes="container"):
             # Input Section
             with gr.Box(elem_classes="input-area"):
                 url_input = gr.Textbox(
-                    label="新闻链接",
-                    placeholder="请输入新闻URL...",
+                    label="新闻链接或原文",
+                    placeholder="请输入新闻URL或直接粘贴新闻内容...",
                     show_label=True,
-                    elem_classes="textbox"
+                    elem_classes="textbox",
+                    lines=5
                 )
                 
                 with gr.Row():

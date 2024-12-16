@@ -44,36 +44,106 @@ class NewsSummarizer:
                 1. 
                 2. 
                 3. 
+                4.
+                5.
                 
                 【深度分析】
                 - 影响和意义：
                 - 发展趋势：
                 - 相关建议：
-                
-                【延伸阅读建议】
-                - 建议关注的相关主题：
-                """,
+            """,
             'en': """
                 Please analyze the following news content and provide a detailed summary:
                 {text}
                 
-                Output in the following format:
+                Please output in the following format:
                 
                 [Key Points]
                 1. 
                 2. 
                 3. 
+                4.
+                5.
                 
                 [In-depth Analysis]
                 - Impact and Significance:
                 - Development Trends:
-                - Related Recommendations:
+                - Related Suggestions:
+            """,
+            'th': """
+                กรุณาวิเคราะห์เนื้อหาข่าวต่อไปนี้และให้สรุปโดยละเอียด:
+                {text}
                 
-                [Suggested Further Reading]
-                - Related topics to follow:
-                """
+                กรุณาแสดงผลในรูปแบบต่อไปนี้:
+                
+                [ประเด็นสำคัญ]
+                1. 
+                2. 
+                3. 
+                4.
+                5.
+                
+                [การวิเคราะห์เชิงลึก]
+                - ผลกระทบและความสำคัญ:
+                - แนวโน้มการพัฒนา:
+                - ข้อเสนอแนะที่เกี่ยวข้อง:
+            """,
+            'vi': """
+                Vui lòng phân tích nội dung tin tức sau và cung cấp bản tóm tắt chi tiết:
+                {text}
+                
+                Vui lòng xuất ra theo định dạng sau:
+                
+                [Điểm chính]
+                1. 
+                2. 
+                3. 
+                4.
+                5.
+                
+                [Phân tích chuyên sâu]
+                - Tác động và ý nghĩa:
+                - Xu hướng phát triển:
+                - Đề xuất liên quan:
+            """,
+            'id': """
+                Silakan analisis konten berita berikut dan berikan ringkasan terperinci:
+                {text}
+                
+                Harap keluarkan dalam format berikut:
+                
+                [Poin Utama]
+                1. 
+                2. 
+                3. 
+                4.
+                5.
+                
+                [Analisis Mendalam]
+                - Dampak dan Signifikansi:
+                - Tren Perkembangan:
+                - Saran Terkait:
+            """,
+            'ms': """
+                Sila analisis kandungan berita berikut dan berikan ringkasan terperinci:
+                {text}
+                
+                Sila output dalam format berikut:
+                
+                [Poin Utama]
+                1. 
+                2. 
+                3. 
+                4.
+                5.
+                
+                [Analisis Mendalam]
+                - Kesan dan Kepentingan:
+                - Trend Pembangunan:
+                - Cadangan Berkaitan:
+            """
         }
         
-        # Use English prompt for languages other than Chinese
+        # Default to English if language not supported
         prompt_template = lang_prompts.get(language, lang_prompts['en'])
         return prompt_template.format(text=text)
