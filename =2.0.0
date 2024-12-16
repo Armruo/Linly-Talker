@@ -1,0 +1,11 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Requirement already satisfied: fastapi in /home/armruo/.local/lib/python3.10/site-packages (0.115.6)
+Requirement already satisfied: pydantic in /home/armruo/anaconda3/envs/linly/lib/python3.10/site-packages (2.10.3)
+Requirement already satisfied: starlette<0.42.0,>=0.40.0 in /home/armruo/.local/lib/python3.10/site-packages (from fastapi) (0.41.3)
+Requirement already satisfied: typing-extensions>=4.8.0 in /home/armruo/.local/lib/python3.10/site-packages (from fastapi) (4.12.2)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/armruo/.local/lib/python3.10/site-packages (from pydantic) (0.7.0)
+Requirement already satisfied: pydantic-core==2.27.1 in /home/armruo/.local/lib/python3.10/site-packages (from pydantic) (2.27.1)
+Requirement already satisfied: anyio<5,>=3.4.0 in /home/armruo/.local/lib/python3.10/site-packages (from starlette<0.42.0,>=0.40.0->fastapi) (3.7.1)
+Requirement already satisfied: idna>=2.8 in /home/armruo/.local/lib/python3.10/site-packages (from anyio<5,>=3.4.0->starlette<0.42.0,>=0.40.0->fastapi) (2.10)
+Requirement already satisfied: sniffio>=1.1 in /home/armruo/.local/lib/python3.10/site-packages (from anyio<5,>=3.4.0->starlette<0.42.0,>=0.40.0->fastapi) (1.3.1)
+Requirement already satisfied: exceptiongroup in /home/armruo/.local/lib/python3.10/site-packages (from anyio<5,>=3.4.0->starlette<0.42.0,>=0.40.0->fastapi) (1.2.2)
