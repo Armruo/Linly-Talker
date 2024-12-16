@@ -1023,13 +1023,13 @@ if __name__ == "__main__":
         tab_names=["个性化角色互动", "数字人多轮智能对话", "MuseTalk数字人实时对话"],
         title="Linly-Talker WebUI"
     )
-    demo.queue(max_size=4, concurrency_count=2)
     demo.launch(
         server_name=ip,  # 本地localhost:127.0.0.1 或 "0.0.0.0" 进行全局端口转发
-        server_port=port,
+        server_port=7860,  # Using Gradio's default port
         # ssl_certfile=ssl_certfile,  # SSL证书文件
         # ssl_keyfile=ssl_keyfile,  # SSL密钥文件
         # ssl_verify=False,
         share=True,
         debug=True,
+        max_threads=4
     )
