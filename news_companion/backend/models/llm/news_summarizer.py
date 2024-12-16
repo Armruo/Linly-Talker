@@ -23,14 +23,38 @@ class NewsSummarizer:
             
         try:
             prompt = self._create_prompt(text, language)
-            response = self.llm.generate(prompt)
-            if isinstance(response, tuple):
-                response = response[0]
-            return response
+            # 使用OpenAI格式的参数
+            response = self.llm.client.chat.completions.create(
+                model=self.llm.model_path,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=2048,
+                temperature=0.7,
+                stop=["[END]", "\n\n\n"]
+            )
+            
+            # 从响应中提取文本
+            response_text = response.choices[0].message.content
+            
+            # 清理响应文本
+            response_text = response_text.strip()
+            
+            # 确保响应包含所有必要的部分
+            if not ("【核心要点】" in response_text and "【深度分析】" in response_text):
+                response_text = self._format_incomplete_response(response_text)
+            
+            return response_text
         except Exception as e:
             logging.error(f"Error generating summary: {str(e)}")
             return f"生成摘要时发生错误: {str(e)}"
             
+    def _format_incomplete_response(self, response):
+        """格式化不完整的响应"""
+        if "【核心要点】" not in response:
+            response = "【核心要点】\n" + response
+        if "【深度分析】" not in response:
+            response += "\n\n【深度分析】\n- 影响和意义：正在分析中..."
+        return response
+
     def _create_prompt(self, text, language):
         """创建提示词"""
         lang_prompts = {
