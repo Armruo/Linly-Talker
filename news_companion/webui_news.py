@@ -140,11 +140,9 @@ def launch_news_companion():
     """启动新闻伴读UI"""
     ui = NewsCompanionUI()
     
-    with gr.Blocks(css="""
-        /* 样式定义... */
-    """) as demo:
+    with gr.Blocks(title="新闻伴读助手") as demo:
         gr.Markdown("""
-        # 新闻伴读助手
+        # 🎙️ 新闻伴读助手
         智能新闻摘要与数字人讲解系统
         """)
         
@@ -174,10 +172,10 @@ def launch_news_companion():
             with gr.Column(scale=3):
                 with gr.Tabs() as tabs:
                     with gr.TabItem("摘要"):
-                        summary_output = gr.Textbox(
+                        summary_output = gr.Markdown(
                             label="新闻摘要",
-                            lines=10,
-                            interactive=False
+                            value="",
+                            elem_classes=["news-summary"]
                         )
                     
                     with gr.TabItem("原文"):
